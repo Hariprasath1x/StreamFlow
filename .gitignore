@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+data/sample/*.json
+data/sample/*.csv
+.pytest_cache/
+data/checkpoints/

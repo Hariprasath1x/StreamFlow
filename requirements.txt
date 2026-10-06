@@ -1,0 +1,6 @@
+faker>=33.0
+pytest>=8.0
+confluent-kafka>=2.3.0
+pyspark==3.5.3
+apache-airflow>=2.8.0
+python-dotenv==1.2.4
