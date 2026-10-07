@@ -1,29 +1,69 @@
-# Power BI Dashboard
+# STREAMFLOW — E-COMMERCE ANALYTICS
 
-Since this project simulates a Data Engineering architecture, automating a Power BI report through code is out of scope (and practically impossible natively on macOS). However, the infrastructure is fully prepared for a business intelligence tool.
+## 1. Dashboard Purpose
+This analytics layer serves as the final downstream consumer of the StreamFlow real-time data pipeline. It visualizes the processed event logs residing in PostgreSQL to monitor e-commerce business KPIs and data pipeline quality. 
 
-## Connecting Power BI to PostgreSQL
+*Note: Power BI Desktop was not available in this environment, so the dashboard is specified below but could not be physically created as a .pbix file.*
 
-To build the dashboard on a supported Windows machine (or VM):
+## 2. PostgreSQL Connection Details
+To reproduce this dashboard locally on a machine with Power BI Desktop:
 
-1. **Open Power BI Desktop**.
-2. Click **Get Data** -> **PostgreSQL database**.
-3. **Server**: `localhost` (or the IP of your Docker host).
-4. **Database**: `streamflow`.
-5. **Data Connectivity mode**: Import (or DirectQuery for real-time updates).
-6. Enter the credentials (User: `postgres`, Password: `secretpassword`).
-7. Select the `processed_orders` table and load.
+- **Source:** PostgreSQL Database
+- **Server:** `localhost`
+- **Port:** `5432`
+- **Database:** `streamflow`
+- **Data Connectivity Mode:** Import
+- **Credentials:** 
+  - **User:** `postgres`
+  - **Password:** *(Use the local password configured in your `.env` or `docker-compose.yml`)*
 
-## Intended Dashboard Design
+## 3. Source Tables & Views
+The dashboard primarily consumes a dedicated SQL view to keep the analytics layer simple and decoupled from raw tables:
+- **`powerbi_order_analytics`** (Derived from `processed_orders`)
+- **`invalid_orders`** (Used exclusively for the Data Quality metric)
 
-The analytical schema supports the following visualizations:
+## 4. Dashboard KPIs & Required DAX Measures
+Create the following simple DAX measures:
 
-1. **Total Revenue (Card):** Sum of `total_amount`.
-2. **Total Orders (Card):** Count of `order_id`.
-3. **Average Order Value (Card):** Average of `total_amount`.
-4. **Revenue by Category (Pie Chart):** Sum of `total_amount` grouped by `category`.
-5. **Revenue by City (Map/Bar Chart):** Sum of `total_amount` grouped by `city`.
-6. **Orders Over Time (Line Chart):** Count of `order_id` grouped by `order_date` and `order_hour`.
-7. **Top Products (Table):** List of `product` sorted by sum of `total_amount` descending.
+- **Total Orders** = `COUNT(powerbi_order_analytics[order_id])`
+- **Total Revenue** = `SUM(powerbi_order_analytics[total_amount])`
+- **Average Order Value** = `AVERAGE(powerbi_order_analytics[total_amount])`
+- **Total Quantity** = `SUM(powerbi_order_analytics[quantity])`
+- **Valid Records** = `COUNTROWS(powerbi_order_analytics)`
+- **Invalid Records** = `COUNTROWS(invalid_orders)`
+- **Data Quality %** = `DIVIDE([Valid Records], [Valid Records] + [Invalid Records], 0)`
 
-These metrics provide a comprehensive view of e-commerce operations in near real-time as data streams through Kafka and PySpark into the warehouse.
+## 5. Visuals Included
+The professional single-page layout consists of:
+
+**Section 1 — KPI Cards**
+- Total Orders
+- Total Revenue
+- Average Order Value
+- Total Quantity Sold
+
+**Section 2 — Revenue Analysis**
+- **Revenue by Category** (Donut / Pie Chart)
+- **Revenue Trend by Order Date** (Line Chart)
+
+**Section 3 — Operational Analysis**
+- **Orders by City** (Bar Chart)
+- **Orders by Hour** (Column Chart)
+
+**Section 4 — Product Analysis**
+- **Top 10 Products by Revenue** (Table or Matrix)
+
+**Section 5 — Data Quality**
+- Valid Records (Card)
+- Invalid Records (Card)
+- Data Quality % (Gauge or Card)
+
+## 6. Steps to Reproduce
+1. Start the StreamFlow Docker infrastructure.
+2. Produce records using the Kafka python generator.
+3. Allow PySpark to micro-batch the data into PostgreSQL.
+4. Open Power BI Desktop, connect using the credentials above, and load the view.
+5. Create the DAX measures and assemble the visual sections.
+
+## 7. Screenshot Instructions
+Once the dashboard is successfully built and populated with data, take a screenshot of the single-page layout and save it as `dashboard/preview.png` in this repository to showcase the final output.
